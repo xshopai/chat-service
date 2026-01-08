@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  chat-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: chat-service
+    ports:
+      - "8014:8014"
+    environment:
+      - NODE_ENV=development
+      - PORT=8014
+      - NAME=chat-service
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=console
+      - CORS_ORIGINS=http://localhost:3000,http://localhost:3001,http://localhost:3010
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_DEPLOYMENT_NAME=${AZURE_OPENAI_DEPLOYMENT_NAME:-gpt-4o}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-02-15-preview}
+      - DAPR_HTTP_PORT=3514
+      - DAPR_GRPC_PORT=50014
+      - DAPR_HOST=localhost
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - xshopai-network
+    restart: unless-stopped
+
+  chat-service-dapr:
+    image: "daprio/daprd:latest"
+    container_name: chat-service-dapr
+    command:
+      [
+        "./daprd",
+        "-app-id", "chat-service",
+        "-app-port", "8014",
+        "-dapr-http-port", "3514",
+        "-dapr-grpc-port", "50014",
+        "-config", "/dapr/config.yaml",
+        "-components-path", "/dapr/components"
+      ]
+    volumes:
+      - ./.dapr:/dapr
+    network_mode: "service:chat-service"
+    depends_on:
+      - chat-service
+
+networks:
+  xshopai-network:
+    external: true

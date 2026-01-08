@@ -1,0 +1,15 @@
+apiVersion: dapr.io/v1alpha1
+kind: Configuration
+metadata:
+  name: chat-service-config
+spec:
+  tracing:
+    samplingRate: "1"
+    zipkin:
+      endpointAddress: http://zipkin:9411/api/v2/spans
+  logging:
+    apiLogging:
+      enabled: true
+      obfuscateURLs: false
+  metrics:
+    enabled: true
