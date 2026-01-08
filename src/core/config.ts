@@ -48,7 +48,7 @@ const config: Config = {
   service: {
     name: process.env.NAME || 'chat-service',
     version: process.env.VERSION || '1.0.0',
-    port: parseInt(process.env.PORT || '8014', 10),
+    port: parseInt(process.env.PORT || '1013', 10),
     host: process.env.HOST || '0.0.0.0',
     nodeEnv: process.env.NODE_ENV || 'development',
   },
@@ -68,9 +68,9 @@ const config: Config = {
   },
 
   dapr: {
-    httpPort: parseInt(process.env.DAPR_HTTP_PORT || '3514', 10),
-    grpcPort: parseInt(process.env.DAPR_GRPC_PORT || '50014', 10),
-    appPort: parseInt(process.env.PORT || '8014', 10),
+    httpPort: parseInt(process.env.DAPR_HTTP_PORT || '3513', 10),
+    grpcPort: parseInt(process.env.DAPR_GRPC_PORT || '50013', 10),
+    appPort: parseInt(process.env.PORT || '1013', 10),
     host: process.env.DAPR_HOST || 'localhost',
     appId: process.env.DAPR_APP_ID || 'chat-service',
   },
