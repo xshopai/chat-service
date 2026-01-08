@@ -8,6 +8,7 @@ import helmet from 'helmet';
 import config from './core/config.js';
 import logger from './core/logger.js';
 import { traceContextMiddleware } from './middlewares/traceContext.middleware.js';
+import homeRoutes from './routes/home.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import operationalRoutes from './routes/operational.routes.js';
 
@@ -53,6 +54,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 // Routes
+app.use('/', homeRoutes);
 app.use('/', operationalRoutes);
 app.use('/api/chat', chatRoutes);
 

@@ -3,9 +3,9 @@
 $ErrorActionPreference = "Stop"
 
 $SERVICE_NAME = "chat-service"
-$APP_PORT = 1013
-$DAPR_HTTP_PORT = 3513
-$DAPR_GRPC_PORT = 50013
+$APP_PORT = 1014
+$DAPR_HTTP_PORT = 3514
+$DAPR_GRPC_PORT = 50014
 
 Write-Host "Starting $SERVICE_NAME..." -ForegroundColor Green
 
