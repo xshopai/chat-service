@@ -9,7 +9,7 @@ import { productClient } from '../clients/product.client.js';
 import { orderClient } from '../clients/order.client.js';
 import logger from '../core/logger.js';
 
-const SYSTEM_PROMPT = `You are a helpful shopping assistant for an e-commerce platform. You can help customers with:
+const BASE_SYSTEM_PROMPT = `You are a helpful shopping assistant for an e-commerce platform. You can help customers with:
 
 1. **Product Search**: Find products by name, category, price range, or description
 2. **Product Information**: Get details about specific products
@@ -20,9 +20,22 @@ Be friendly, concise, and helpful.
 
 IMPORTANT: When showing products or orders, do NOT list them in your text response. The UI will automatically display interactive product/order cards with images, prices, and ratings. Just provide a brief summary like "Here are some phones I found for you:" or "I found 5 products matching your search." Let the cards do the work of showing details.
 
-If the user is not logged in (no userId provided), you can still help with product searches but will need to let them know they need to log in to view their orders.
-
 Always use the available tools to get real data - don't make up product names, prices, or order information.`;
+
+/**
+ * Build system prompt with user context
+ */
+function buildSystemPrompt(userId?: string): string {
+  if (userId) {
+    return `${BASE_SYSTEM_PROMPT}
+
+USER CONTEXT: The user IS logged in (userId: ${userId}). You have full access to their order history and can help with order-related queries. When they ask about "my orders" or want to check orders, use the getMyOrders tool.`;
+  } else {
+    return `${BASE_SYSTEM_PROMPT}
+
+USER CONTEXT: The user is NOT logged in. You can help with product searches, but for order-related requests (viewing orders, tracking, etc.), you must tell them they need to log in first.`;
+  }
+}
 
 export interface ChatRequest {
   message: string;
@@ -32,6 +45,7 @@ export interface ChatRequest {
     previousMessages?: Array<{ role: 'user' | 'assistant'; content: string }>;
   };
   traceId?: string;
+  authToken?: string; // JWT token for downstream service calls
 }
 
 export interface ChatResponse {
@@ -55,7 +69,7 @@ class ChatService {
    * Process a chat message and return a response
    */
   async processMessage(request: ChatRequest): Promise<ChatResponse> {
-    const { message, userId, conversationId, context, traceId } = request;
+    const { message, userId, conversationId, context, traceId, authToken } = request;
     const log = traceId ? logger.withTraceContext(traceId) : logger;
     const currentConversationId = conversationId || this.generateConversationId();
 
@@ -70,8 +84,15 @@ class ChatService {
     }
 
     try {
-      // Build message history
-      const messages: ChatCompletionMessageParam[] = [{ role: 'system', content: SYSTEM_PROMPT }];
+      // Build message history with user context
+      const systemPrompt = buildSystemPrompt(userId);
+      const messages: ChatCompletionMessageParam[] = [{ role: 'system', content: systemPrompt }];
+
+      log.debug('System prompt built', { 
+        hasUserId: !!userId,
+        hasAuthToken: !!authToken,
+        promptLength: systemPrompt.length 
+      });
 
       // Add previous messages from context
       if (context?.previousMessages) {
@@ -119,7 +140,7 @@ class ChatService {
 
         // Execute each tool call
         for (const toolCall of result.toolCalls) {
-          const toolResult = await this.executeToolCall(toolCall.name, toolCall.arguments, userId, traceId);
+          const toolResult = await this.executeToolCall(toolCall.name, toolCall.arguments, userId, authToken, traceId);
           toolsUsed.push(toolCall.name);
 
           // Collect structured data for UI rendering
@@ -171,13 +192,14 @@ class ChatService {
     toolName: string,
     argsJson: string,
     userId?: string,
+    authToken?: string,
     traceId?: string
   ): Promise<any> {
     const log = traceId ? logger.withTraceContext(traceId) : logger;
 
     try {
       const args = JSON.parse(argsJson);
-      log.debug('Executing tool', { toolName, args });
+      log.debug('Executing tool', { toolName, args, hasAuthToken: !!authToken });
 
       switch (toolName) {
         case ToolNames.SEARCH_PRODUCTS: {
@@ -213,6 +235,9 @@ class ChatService {
           if (!userId) {
             return { error: 'User not logged in. Please log in to view your orders.' };
           }
+          if (!authToken) {
+            log.warn('No auth token provided for order lookup', { userId });
+          }
           const result = await orderClient.getOrders(
             {
               userId,
@@ -220,6 +245,7 @@ class ChatService {
               limit: args.limit || 10,
               offset: args.offset,
             },
+            authToken,
             traceId
           );
           return result;
@@ -229,7 +255,7 @@ class ChatService {
           if (!userId) {
             return { error: 'User not logged in. Please log in to view order details.' };
           }
-          const order = await orderClient.getOrderById(args.orderId, userId, traceId);
+          const order = await orderClient.getOrderById(args.orderId, userId, authToken, traceId);
           if (!order) {
             return { error: 'Order not found' };
           }
@@ -240,7 +266,7 @@ class ChatService {
           if (!userId) {
             return { error: 'User not logged in. Please log in to track orders.' };
           }
-          const tracking = await orderClient.trackOrder(args.orderId, userId, traceId);
+          const tracking = await orderClient.trackOrder(args.orderId, userId, authToken, traceId);
           if (!tracking) {
             return { error: 'Tracking information not available for this order' };
           }

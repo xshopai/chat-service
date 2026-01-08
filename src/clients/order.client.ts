@@ -70,27 +70,37 @@ class OrderClient {
   /**
    * Get orders for a user
    */
-  async getOrders(params: GetOrdersParams, traceId?: string): Promise<OrdersResult> {
+  async getOrders(params: GetOrdersParams, authToken?: string, traceId?: string): Promise<OrdersResult> {
     const log = traceId ? logger.withTraceContext(traceId) : logger;
 
     try {
       log.debug('Getting user orders', { userId: params.userId, status: params.status });
 
-      const queryParams = new URLSearchParams();
-      queryParams.set('userId', params.userId);
-      if (params.status) queryParams.set('status', params.status);
-      if (params.limit) queryParams.set('limit', String(params.limit));
-      if (params.offset) queryParams.set('offset', String(params.offset));
+      // Use the correct order-service endpoint: /api/orders/customer/{customerId}
+      const endpoint = `api/orders/customer/${params.userId}`;
 
-      const endpoint = `api/orders?${queryParams.toString()}`;
+      const headers: Record<string, string> = {
+        'x-trace-id': traceId || '',
+      };
 
-      const result = await daprClient.invokeService<OrdersResult>(this.appId, endpoint, HttpMethod.GET, undefined, {
-        headers: { 'x-trace-id': traceId || '' },
+      // Add authorization header if token is provided
+      if (authToken) {
+        headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
+      }
+
+      const orders = await daprClient.invokeService<Order[]>(this.appId, endpoint, HttpMethod.GET, undefined, {
+        headers,
       });
 
-      log.debug('Orders retrieved', { count: result.orders?.length ?? 0 });
+      log.debug('Orders retrieved', { count: orders?.length ?? 0 });
 
-      return result;
+      // Transform the response to match expected OrdersResult format
+      return {
+        orders: orders || [],
+        total: orders?.length ?? 0,
+        page: 1,
+        pageSize: params.limit || 10,
+      };
     } catch (error: any) {
       log.error('Failed to get orders', { error: error.message, userId: params.userId });
       throw error;
@@ -100,18 +110,28 @@ class OrderClient {
   /**
    * Get order details by ID
    */
-  async getOrderById(orderId: string, userId: string, traceId?: string): Promise<Order | null> {
+  async getOrderById(orderId: string, userId: string, authToken?: string, traceId?: string): Promise<Order | null> {
     const log = traceId ? logger.withTraceContext(traceId) : logger;
 
     try {
       log.debug('Getting order details', { orderId, userId });
+
+      const headers: Record<string, string> = {
+        'x-trace-id': traceId || '',
+        'x-user-id': userId,
+      };
+
+      // Add authorization header if token is provided
+      if (authToken) {
+        headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
+      }
 
       const result = await daprClient.invokeService<Order>(
         this.appId,
         `api/orders/${orderId}`,
         HttpMethod.GET,
         undefined,
-        { headers: { 'x-trace-id': traceId || '', 'x-user-id': userId } }
+        { headers }
       );
 
       return result;
@@ -128,18 +148,28 @@ class OrderClient {
   /**
    * Get tracking information for an order
    */
-  async trackOrder(orderId: string, userId: string, traceId?: string): Promise<OrderTrackingInfo | null> {
+  async trackOrder(orderId: string, userId: string, authToken?: string, traceId?: string): Promise<OrderTrackingInfo | null> {
     const log = traceId ? logger.withTraceContext(traceId) : logger;
 
     try {
       log.debug('Getting order tracking', { orderId, userId });
+
+      const headers: Record<string, string> = {
+        'x-trace-id': traceId || '',
+        'x-user-id': userId,
+      };
+
+      // Add authorization header if token is provided
+      if (authToken) {
+        headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
+      }
 
       const result = await daprClient.invokeService<OrderTrackingInfo>(
         this.appId,
         `api/orders/${orderId}/tracking`,
         HttpMethod.GET,
         undefined,
-        { headers: { 'x-trace-id': traceId || '', 'x-user-id': userId } }
+        { headers }
       );
 
       return result;

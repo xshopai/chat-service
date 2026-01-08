@@ -17,7 +17,16 @@ router.post('/message', async (req: Request, res: Response) => {
   const log = logger.withTraceContext(traceId);
 
   try {
-    const { message, userId, conversationId, context } = req.body;
+    const { message, userId, conversationId, context, authToken } = req.body;
+
+    // DEBUG: Log what we received
+    console.log('💬 [chat-service] /message received:', {
+      hasUserId: !!userId,
+      userId,
+      hasAuthToken: !!authToken,
+      messagePreview: message?.substring(0, 50),
+      bodyKeys: Object.keys(req.body),
+    });
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({
@@ -39,6 +48,7 @@ router.post('/message', async (req: Request, res: Response) => {
       conversationId,
       context,
       traceId,
+      authToken, // Pass auth token for downstream service calls
     });
 
     return res.json({
