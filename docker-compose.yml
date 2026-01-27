@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   chat-service:
@@ -34,12 +34,18 @@ services:
     command:
       [
         "./daprd",
-        "-app-id", "chat-service",
-        "-app-port", "8013",
-        "-dapr-http-port", "3513",
-        "-dapr-grpc-port", "50013",
-        "-config", "/dapr/config.yaml",
-        "-components-path", "/dapr/components"
+        "-app-id",
+        "chat-service",
+        "-app-port",
+        "8013",
+        "-dapr-http-port",
+        "3513",
+        "-dapr-grpc-port",
+        "50013",
+        "-config",
+        "/dapr/config.yaml",
+        "-components-path",
+        "/dapr/components",
       ]
     volumes:
       - ./.dapr:/dapr
