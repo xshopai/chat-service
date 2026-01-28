@@ -68,8 +68,8 @@ const config: Config = {
   },
 
   dapr: {
-    httpPort: parseInt(process.env.DAPR_HTTP_PORT || '3513', 10),
-    grpcPort: parseInt(process.env.DAPR_GRPC_PORT || '50014', 10),
+    httpPort: parseInt(process.env.DAPR_HTTP_PORT || '3500', 10),
+    grpcPort: parseInt(process.env.DAPR_GRPC_PORT || '50001', 10),
     appPort: parseInt(process.env.PORT || '1013', 10),
     host: process.env.DAPR_HOST || 'localhost',
     appId: process.env.DAPR_APP_ID || 'chat-service',

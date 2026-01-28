@@ -54,6 +54,7 @@ cp .env.example .env
 ```
 
 Required environment variables:
+
 - `AZURE_OPENAI_ENDPOINT`: Your Azure OpenAI endpoint URL
 - `AZURE_OPENAI_API_KEY`: Your Azure OpenAI API key
 - `AZURE_OPENAI_DEPLOYMENT_NAME`: Your GPT-4o deployment name
@@ -61,11 +62,13 @@ Required environment variables:
 ### 3. Run in development mode
 
 Without Dapr (standalone):
+
 ```bash
 npm run dev
 ```
 
 With Dapr sidecar:
+
 ```bash
 # Windows
 .\run.ps1
@@ -90,24 +93,25 @@ curl -X POST http://localhost:8014/api/chat/message \
 
 ### Chat Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/chat/message` | Send a message and get AI response |
-| GET | `/api/chat/history/:conversationId` | Get conversation history |
+| Method | Endpoint                            | Description                        |
+| ------ | ----------------------------------- | ---------------------------------- |
+| POST   | `/api/chat/message`                 | Send a message and get AI response |
+| GET    | `/api/chat/history/:conversationId` | Get conversation history           |
 
 ### Operational Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/ready` | Readiness probe |
-| GET | `/live` | Liveness probe |
+| Method | Endpoint  | Description     |
+| ------ | --------- | --------------- |
+| GET    | `/health` | Health check    |
+| GET    | `/ready`  | Readiness probe |
+| GET    | `/live`   | Liveness probe  |
 
 ## Request/Response Examples
 
 ### Send Chat Message
 
 **Request:**
+
 ```json
 POST /api/chat/message
 {
@@ -118,6 +122,7 @@ POST /api/chat/message
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -137,11 +142,13 @@ POST /api/chat/message
 The chat service uses these tools to fetch real data:
 
 ### Product Tools
+
 - `searchProducts` - Search products by keyword, category, price range
 - `getProductDetails` - Get detailed product information
 - `getCategories` - List all product categories
 
 ### Order Tools
+
 - `getMyOrders` - Get user's order history
 - `getOrderDetails` - Get specific order details
 - `trackOrder` - Get tracking information
@@ -186,17 +193,17 @@ chat-service/
 
 ## Configuration
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| PORT | 8014 | Service port |
-| NODE_ENV | development | Environment |
-| LOG_LEVEL | debug | Logging level |
-| AZURE_OPENAI_ENDPOINT | - | Azure OpenAI endpoint |
-| AZURE_OPENAI_API_KEY | - | Azure OpenAI API key |
-| AZURE_OPENAI_DEPLOYMENT_NAME | gpt-4o | Model deployment name |
-| DAPR_HTTP_PORT | 3514 | Dapr HTTP port |
-| PRODUCT_SERVICE_APP_ID | product-service | Product service Dapr app ID |
-| ORDER_SERVICE_APP_ID | order-service | Order service Dapr app ID |
+| Variable                     | Default         | Description                 |
+| ---------------------------- | --------------- | --------------------------- |
+| PORT                         | 8014            | Service port                |
+| NODE_ENV                     | development     | Environment                 |
+| LOG_LEVEL                    | debug           | Logging level               |
+| AZURE_OPENAI_ENDPOINT        | -               | Azure OpenAI endpoint       |
+| AZURE_OPENAI_API_KEY         | -               | Azure OpenAI API key        |
+| AZURE_OPENAI_DEPLOYMENT_NAME | gpt-4o          | Model deployment name       |
+| DAPR_HTTP_PORT               | 3500            | Dapr HTTP port              |
+| PRODUCT_SERVICE_APP_ID       | product-service | Product service Dapr app ID |
+| ORDER_SERVICE_APP_ID         | order-service   | Order service Dapr app ID   |
 
 ## Development
 

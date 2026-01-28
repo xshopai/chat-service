@@ -75,6 +75,9 @@ else
             "AZURE_OPENAI_ENDPOINT=$AZURE_OPENAI_ENDPOINT" \
             "AZURE_OPENAI_API_KEY=secretref:openai-key" \
             "AZURE_OPENAI_DEPLOYMENT=$AZURE_OPENAI_DEPLOYMENT" \
+            "DAPR_HTTP_PORT=3500" \
+            "DAPR_GRPC_PORT=50001" \
+            "DAPR_PUBSUB_NAME=pubsub" \
         --output none
 fi
 
