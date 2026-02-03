@@ -271,13 +271,6 @@ echo -e "   Endpoint:          ${AZURE_OPENAI_ENDPOINT:0:40}..."
 echo -e "   Deployment:        $AZURE_OPENAI_DEPLOYMENT"
 echo ""
 
-read -p "Do you want to proceed with deployment? (Y/n): " CONFIRM
-CONFIRM=${CONFIRM:-Y}
-if [[ "$CONFIRM" =~ ^[Nn]$ ]]; then
-    print_warning "Deployment cancelled by user"
-    exit 0
-fi
-
 # ============================================================================
 # Step 1: Build and Push Container Image
 # ============================================================================
