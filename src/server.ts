@@ -2,6 +2,12 @@
  * Server Entry Point
  * Starts the HTTP server and initializes services
  */
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Initialize Zipkin tracing FIRST
+import './tracing.js';
+
 import app from './app.js';
 import config from './core/config.js';
 import logger from './core/logger.js';
