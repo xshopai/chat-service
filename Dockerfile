@@ -46,9 +46,9 @@ USER nodejs
 # Expose port
 EXPOSE ${PORT:-8013}
 
-# Health check
+# Health check (using Node.js HTTP GET to /health/live)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8013}/health || exit 1
+    CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || '8013') + '/health/live', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
 # Start the service
 CMD ["node", "dist/server.js"]

@@ -8,21 +8,9 @@ import config from '../core/config.js';
 const router = Router();
 
 /**
- * Health check endpoint
- */
-router.get('/health', (_req: Request, res: Response) => {
-  res.json({
-    status: 'healthy',
-    service: config.service.name,
-    version: config.service.version,
-    timestamp: new Date().toISOString(),
-  });
-});
-
-/**
  * Readiness probe - checks if service is ready to accept traffic
  */
-router.get('/ready', (_req: Request, res: Response) => {
+const readinessHandler = (_req: Request, res: Response) => {
   const hasLlmConfig = !!(config.azureOpenAI.endpoint && config.azureOpenAI.apiKey);
 
   res.json({
@@ -33,17 +21,21 @@ router.get('/ready', (_req: Request, res: Response) => {
     },
     timestamp: new Date().toISOString(),
   });
-});
+};
 
 /**
  * Liveness probe - checks if service is alive
  */
-router.get('/live', (_req: Request, res: Response) => {
+const livenessHandler = (_req: Request, res: Response) => {
   res.json({
     status: 'alive',
     service: config.service.name,
     timestamp: new Date().toISOString(),
   });
-});
+};
+
+// Standard Kubernetes/Docker health check paths
+router.get('/health/ready', readinessHandler);
+router.get('/health/live', livenessHandler); // Used by Docker HEALTHCHECK
 
 export default router;
