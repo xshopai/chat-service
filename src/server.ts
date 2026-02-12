@@ -5,9 +5,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-// Initialize Zipkin tracing FIRST
-import './tracing.js';
-
 import app from './app.js';
 import config from './core/config.js';
 import logger from './core/logger.js';
@@ -64,11 +61,17 @@ function setupGracefulShutdown(server: any): void {
  */
 async function startServer(): Promise<void> {
   try {
+    // Initialize tracing FIRST (must be dynamic import after dotenv.config due to ES module hoisting)
+    await import('./tracing.js');
+
     validateConfig();
 
     const server = app.listen(PORT, HOST, () => {
+      // For display purposes, use localhost instead of 0.0.0.0
+      const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
+
       logger.info(`${config.service.name} started`, {
-        host: HOST,
+        host: displayHost,
         port: PORT,
         environment: config.service.nodeEnv,
         version: config.service.version,
@@ -78,8 +81,8 @@ async function startServer(): Promise<void> {
 
       if (config.service.nodeEnv === 'development') {
         logger.debug('Debug logging enabled');
-        logger.debug(`API base URL: http://${HOST}:${PORT}`);
-        logger.debug(`Health check: http://${HOST}:${PORT}/health`);
+        logger.debug(`API base URL: http://${displayHost}:${PORT}`);
+        logger.debug(`Health check: http://${displayHost}:${PORT}/health/ready`);
       }
     });
 
