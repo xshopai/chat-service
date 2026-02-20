@@ -193,17 +193,33 @@ chat-service/
 
 ## Configuration
 
-| Variable                     | Default         | Description                 |
-| ---------------------------- | --------------- | --------------------------- |
-| PORT                         | 8014            | Service port                |
-| NODE_ENV                     | development     | Environment                 |
-| LOG_LEVEL                    | debug           | Logging level               |
-| AZURE_OPENAI_ENDPOINT        | -               | Azure OpenAI endpoint       |
-| AZURE_OPENAI_API_KEY         | -               | Azure OpenAI API key        |
-| AZURE_OPENAI_DEPLOYMENT_NAME | gpt-4o          | Model deployment name       |
-| DAPR_HTTP_PORT               | 3500            | Dapr HTTP port              |
-| PRODUCT_SERVICE_APP_ID       | product-service | Product service Dapr app ID |
-| ORDER_SERVICE_APP_ID         | order-service   | Order service Dapr app ID   |
+| Variable                     | Default         | Description                                                 |
+| ---------------------------- | --------------- | ----------------------------------------------------------- |
+| PORT                         | 8014            | Service port                                                |
+| NODE_ENV                     | development     | Environment                                                 |
+| LOG_LEVEL                    | debug           | Logging level                                               |
+| AZURE_OPENAI_ENDPOINT        | -               | Azure OpenAI endpoint                                       |
+| AZURE_OPENAI_API_KEY         | -               | Azure OpenAI API key (not needed if using Managed Identity) |
+| AZURE_USE_MANAGED_IDENTITY   | false           | Use Azure Managed Identity for authentication               |
+| AZURE_OPENAI_DEPLOYMENT_NAME | gpt-4o          | Model deployment name                                       |
+| DAPR_HTTP_PORT               | 3500            | Dapr HTTP port                                              |
+| PRODUCT_SERVICE_APP_ID       | product-service | Product service Dapr app ID                                 |
+| ORDER_SERVICE_APP_ID         | order-service   | Order service Dapr app ID                                   |
+
+### Authentication Methods
+
+**Managed Identity (Recommended for Production):**
+
+- Set `AZURE_USE_MANAGED_IDENTITY=true`
+- No API key required
+- Automatic token management by Azure
+- More secure and follows Azure best practices
+
+**API Key (Development/Testing):**
+
+- Set `AZURE_OPENAI_API_KEY` to your key
+- Suitable for local development
+- Requires key rotation and management
 
 ## Development
 

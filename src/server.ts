@@ -21,7 +21,9 @@ function validateConfig(): void {
   if (!config.azureOpenAI.endpoint) {
     missing.push('AZURE_OPENAI_ENDPOINT');
   }
-  if (!config.azureOpenAI.apiKey) {
+  
+  // API key is only required if not using Managed Identity
+  if (!config.azureOpenAI.useManagedIdentity && !config.azureOpenAI.apiKey) {
     missing.push('AZURE_OPENAI_API_KEY');
   }
 
@@ -30,6 +32,9 @@ function validateConfig(): void {
       missing,
     });
     logger.warn('Chat service will start but LLM features will not work until configured');
+  } else {
+    const authMethod = config.azureOpenAI.useManagedIdentity ? 'Managed Identity' : 'API Key';
+    logger.info(`Azure OpenAI configured with ${authMethod} authentication`);
   }
 }
 

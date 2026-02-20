@@ -1,7 +1,9 @@
 /**
  * Azure OpenAI Client
  * Handles LLM interactions with function calling support
+ * Supports both API key and Managed Identity authentication
  */
+import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
 import { AzureOpenAI } from 'openai';
 import {
   ChatCompletionMessageParam,
@@ -16,18 +18,42 @@ let client: AzureOpenAI | null = null;
 
 /**
  * Get or create the Azure OpenAI client
+ * Uses Managed Identity if configured, otherwise falls back to API key
  */
 function getClient(): AzureOpenAI {
   if (!client) {
-    if (!config.azureOpenAI.endpoint || !config.azureOpenAI.apiKey) {
-      throw new Error('Azure OpenAI is not configured. Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY');
+    if (!config.azureOpenAI.endpoint) {
+      throw new Error('Azure OpenAI endpoint is not configured. Set AZURE_OPENAI_ENDPOINT');
     }
 
-    client = new AzureOpenAI({
-      endpoint: config.azureOpenAI.endpoint,
-      apiKey: config.azureOpenAI.apiKey,
-      apiVersion: config.azureOpenAI.apiVersion,
-    });
+    if (config.azureOpenAI.useManagedIdentity) {
+      // Use Managed Identity authentication (recommended for production)
+      logger.info('Initializing Azure OpenAI client with Managed Identity authentication');
+      const credential = new DefaultAzureCredential();
+      const azureADTokenProvider = getBearerTokenProvider(
+        credential,
+        'https://cognitiveservices.azure.com/.default'
+      );
+
+      client = new AzureOpenAI({
+        endpoint: config.azureOpenAI.endpoint,
+        azureADTokenProvider,
+        apiVersion: config.azureOpenAI.apiVersion,
+      });
+    } else {
+      // Use API key authentication (for local development)
+      if (!config.azureOpenAI.apiKey) {
+        throw new Error(
+          'Azure OpenAI API key is not configured. Set AZURE_OPENAI_API_KEY or enable Managed Identity with AZURE_USE_MANAGED_IDENTITY=true'
+        );
+      }
+      logger.info('Initializing Azure OpenAI client with API key authentication');
+      client = new AzureOpenAI({
+        endpoint: config.azureOpenAI.endpoint,
+        apiKey: config.azureOpenAI.apiKey,
+        apiVersion: config.azureOpenAI.apiVersion,
+      });
+    }
   }
   return client;
 }
@@ -125,5 +151,8 @@ export async function sendChatCompletion(options: ChatCompletionOptions): Promis
  * Check if Azure OpenAI is configured
  */
 export function isConfigured(): boolean {
-  return !!(config.azureOpenAI.endpoint && config.azureOpenAI.apiKey);
+  return !!(
+    config.azureOpenAI.endpoint &&
+    (config.azureOpenAI.useManagedIdentity || config.azureOpenAI.apiKey)
+  );
 }

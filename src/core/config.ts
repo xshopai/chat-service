@@ -37,6 +37,7 @@ interface Config {
     apiKey: string;
     deploymentName: string;
     apiVersion: string;
+    useManagedIdentity: boolean;
   };
   services: {
     productService: string;
@@ -80,6 +81,7 @@ const config: Config = {
     apiKey: process.env.AZURE_OPENAI_API_KEY || '',
     deploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4o',
     apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview',
+    useManagedIdentity: process.env.AZURE_USE_MANAGED_IDENTITY === 'true',
   },
 
   services: {
