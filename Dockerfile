@@ -44,11 +44,12 @@ RUN mkdir -p logs && chown -R nodejs:nodejs /app
 USER nodejs
 
 # Expose port
-EXPOSE ${PORT:-8013}
+ENV PORT=8080
+EXPOSE 8080
 
 # Health check (using Node.js HTTP GET to /health/live)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || '8013') + '/health/live', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+    CMD node -e "require('http').get('http://localhost:8080/health/live', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
 
 # Start the service
 CMD ["node", "dist/server.js"]
