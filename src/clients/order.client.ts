@@ -1,9 +1,7 @@
 /**
  * Order Service Client
- * Handles communication with order-service via Dapr
+ * Handles communication with order-service via HTTP
  */
-import { HttpMethod } from '@dapr/dapr';
-import { daprClient } from '../core/daprClient.js';
 import config from '../core/config.js';
 import logger from '../core/logger.js';
 
@@ -62,10 +60,10 @@ export interface OrdersResult {
 }
 
 /**
- * Order service client for Dapr invocation
+ * Order service client for HTTP invocation
  */
 class OrderClient {
-  private appId = config.services.orderService;
+  private baseUrl = config.services.orderServiceUrl;
 
   /**
    * Get orders for a user
@@ -77,9 +75,10 @@ class OrderClient {
       log.debug('Getting user orders', { userId: params.userId, status: params.status });
 
       // Use the correct order-service endpoint: /api/orders/customer/{customerId}
-      const endpoint = `api/orders/customer/${params.userId}`;
+      const url = `${this.baseUrl}/api/orders/customer/${params.userId}`;
 
       const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
         'x-trace-id': traceId || '',
       };
 
@@ -88,9 +87,16 @@ class OrderClient {
         headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
       }
 
-      const orders = await daprClient.invokeService<Order[]>(this.appId, endpoint, HttpMethod.GET, undefined, {
+      const response = await fetch(url, {
+        method: 'GET',
         headers,
       });
+
+      if (!response.ok) {
+        throw new Error(`Get orders failed: ${response.status} ${response.statusText}`);
+      }
+
+      const orders = await response.json() as Order[];
 
       log.debug('Orders retrieved', { count: orders?.length ?? 0 });
 
@@ -126,14 +132,22 @@ class OrderClient {
         headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
       }
 
-      const result = await daprClient.invokeService<Order>(
-        this.appId,
-        `api/orders/${orderId}`,
-        HttpMethod.GET,
-        undefined,
-        { headers }
-      );
+      const url = `${this.baseUrl}/api/orders/${orderId}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
 
+      if (response.status === 404) {
+        log.debug('Order not found', { orderId });
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Get order failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json() as Order;
       return result;
     } catch (error: any) {
       if (error.message.includes('404')) {
@@ -164,14 +178,22 @@ class OrderClient {
         headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
       }
 
-      const result = await daprClient.invokeService<OrderTrackingInfo>(
-        this.appId,
-        `api/orders/${orderId}/tracking`,
-        HttpMethod.GET,
-        undefined,
-        { headers }
-      );
+      const url = `${this.baseUrl}/api/orders/${orderId}/tracking`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+      });
 
+      if (response.status === 404) {
+        log.debug('Order tracking not found', { orderId });
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Get order tracking failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json() as OrderTrackingInfo;
       return result;
     } catch (error: any) {
       if (error.message.includes('404')) {

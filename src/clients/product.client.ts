@@ -1,9 +1,7 @@
 /**
  * Product Service Client
- * Handles communication with product-service via Dapr
+ * Handles communication with product-service via HTTP
  */
-import { HttpMethod } from '@dapr/dapr';
-import { daprClient } from '../core/daprClient.js';
 import config from '../core/config.js';
 import logger from '../core/logger.js';
 
@@ -35,10 +33,10 @@ export interface ProductSearchResult {
 }
 
 /**
- * Product service client for Dapr invocation
+ * Product service client for HTTP invocation
  */
 class ProductClient {
-  private appId = config.services.productService;
+  private baseUrl = config.services.productServiceUrl;
 
   /**
    * Search products with optional filters
@@ -67,15 +65,21 @@ class ProductClient {
       if (params.maxPrice !== undefined) queryParams.set('maxPrice', String(params.maxPrice));
       if (params.limit) queryParams.set('limit', String(params.limit));
 
-      const endpoint = `api/products/search?${queryParams.toString()}`;
+      const url = `${this.baseUrl}/api/products/search?${queryParams.toString()}`;
 
-      const result = await daprClient.invokeService<ProductSearchResult>(
-        this.appId,
-        endpoint,
-        HttpMethod.GET,
-        undefined,
-        { headers: { 'x-trace-id': traceId || '' } }
-      );
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-trace-id': traceId || '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Product search failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json() as ProductSearchResult;
 
       log.debug('Product search completed', {
         resultCount: result.products?.length ?? 0,
@@ -97,14 +101,25 @@ class ProductClient {
     try {
       log.debug('Getting product details', { productId });
 
-      const result = await daprClient.invokeService<Product>(
-        this.appId,
-        `api/products/${productId}`,
-        HttpMethod.GET,
-        undefined,
-        { headers: { 'x-trace-id': traceId || '' } }
-      );
+      const url = `${this.baseUrl}/api/products/${productId}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-trace-id': traceId || '',
+        },
+      });
 
+      if (response.status === 404) {
+        log.debug('Product not found', { productId });
+        return null;
+      }
+
+      if (!response.ok) {
+        throw new Error(`Get product failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json() as Product;
       return result;
     } catch (error: any) {
       if (error.message.includes('404')) {
@@ -125,13 +140,20 @@ class ProductClient {
     try {
       log.debug('Getting product categories');
 
-      const result = await daprClient.invokeService<{ categories: string[] }>(
-        this.appId,
-        'api/products/categories',
-        HttpMethod.GET,
-        undefined,
-        { headers: { 'x-trace-id': traceId || '' } }
-      );
+      const url = `${this.baseUrl}/api/products/categories`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-trace-id': traceId || '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Get categories failed: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json() as { categories: string[] };
 
       return result.categories || [];
     } catch (error: any) {

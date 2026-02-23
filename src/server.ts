@@ -80,8 +80,6 @@ async function startServer(): Promise<void> {
         port: PORT,
         environment: config.service.nodeEnv,
         version: config.service.version,
-        daprHttpPort: config.dapr.httpPort,
-        daprAppId: config.dapr.appId,
       });
 
       if (config.service.nodeEnv === 'development') {
