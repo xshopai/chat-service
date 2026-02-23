@@ -101,11 +101,7 @@ class OrderClient {
       let orders: Order[];
 
       if (this.mode === 'dapr' && daprClient) {
-        orders = await daprClient.invoker.invoke(
-          this.appId,
-          endpoint,
-          HttpMethod.GET
-        ) as Order[];
+        orders = (await daprClient.invoker.invoke(this.appId, endpoint, HttpMethod.GET)) as Order[];
       } else {
         const url = `${this.baseUrl}/${endpoint}`;
         headers['Content-Type'] = 'application/json';
@@ -156,11 +152,7 @@ class OrderClient {
       }
 
       if (this.mode === 'dapr' && daprClient) {
-        const result = await daprClient.invoker.invoke(
-          this.appId,
-          `api/orders/${orderId}`,
-          HttpMethod.GET
-        ) as Order;
+        const result = (await daprClient.invoker.invoke(this.appId, `api/orders/${orderId}`, HttpMethod.GET)) as Order;
         return result;
       } else {
         const url = `${this.baseUrl}/api/orders/${orderId}`;
@@ -216,11 +208,11 @@ class OrderClient {
       }
 
       if (this.mode === 'dapr' && daprClient) {
-        const result = await daprClient.invoker.invoke(
+        const result = (await daprClient.invoker.invoke(
           this.appId,
           `api/orders/${orderId}/tracking`,
-          HttpMethod.GET
-        ) as OrderTrackingInfo;
+          HttpMethod.GET,
+        )) as OrderTrackingInfo;
         return result;
       } else {
         const url = `${this.baseUrl}/api/orders/${orderId}/tracking`;

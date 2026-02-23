@@ -81,11 +81,7 @@ class ProductClient {
 
       if (this.mode === 'dapr' && daprClient) {
         const endpoint = `api/products/search?${queryParams.toString()}`;
-        result = await daprClient.invoker.invoke(
-          this.appId,
-          endpoint,
-          HttpMethod.GET
-        ) as ProductSearchResult;
+        result = (await daprClient.invoker.invoke(this.appId, endpoint, HttpMethod.GET)) as ProductSearchResult;
       } else {
         const url = `${this.baseUrl}/api/products/search?${queryParams.toString()}`;
         const response = await fetch(url, {
@@ -124,11 +120,11 @@ class ProductClient {
       log.debug('Getting product details', { productId });
 
       if (this.mode === 'dapr' && daprClient) {
-        const result = await daprClient.invoker.invoke(
+        const result = (await daprClient.invoker.invoke(
           this.appId,
           `api/products/${productId}`,
-          HttpMethod.GET
-        ) as Product;
+          HttpMethod.GET,
+        )) as Product;
         return result;
       } else {
         const url = `${this.baseUrl}/api/products/${productId}`;
@@ -174,11 +170,9 @@ class ProductClient {
       let result: { categories: string[] };
 
       if (this.mode === 'dapr' && daprClient) {
-        result = await daprClient.invoker.invoke(
-          this.appId,
-          'api/products/categories',
-          HttpMethod.GET
-        ) as { categories: string[] };
+        result = (await daprClient.invoker.invoke(this.appId, 'api/products/categories', HttpMethod.GET)) as {
+          categories: string[];
+        };
       } else {
         const url = `${this.baseUrl}/api/products/categories`;
         const response = await fetch(url, {
