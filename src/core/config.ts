@@ -25,6 +25,15 @@ interface Config {
     toFile: boolean;
     filePath: string;
   };
+  serviceInvocation: {
+    mode: 'http' | 'dapr';
+    dapr?: {
+      httpPort: number;
+      grpcPort: number;
+      host: string;
+      appId: string;
+    };
+  };
   azureOpenAI: {
     endpoint: string;
     apiKey: string;
@@ -33,8 +42,14 @@ interface Config {
     useManagedIdentity: boolean;
   };
   services: {
-    productServiceUrl: string;
-    orderServiceUrl: string;
+    productService: {
+      appId: string;
+      url: string;
+    };
+    orderService: {
+      appId: string;
+      url: string;
+    };
   };
 }
 
@@ -61,6 +76,16 @@ const config: Config = {
     filePath: process.env.LOG_FILE_PATH || './logs/chat-service.log',
   },
 
+  serviceInvocation: {
+    mode: (process.env.SERVICE_INVOCATION_MODE as 'http' | 'dapr') || 'http',
+    dapr: {
+      httpPort: parseInt(process.env.DAPR_HTTP_PORT || '3500', 10),
+      grpcPort: parseInt(process.env.DAPR_GRPC_PORT || '50001', 10),
+      host: process.env.DAPR_HOST || 'localhost',
+      appId: process.env.DAPR_APP_ID || 'chat-service',
+    },
+  },
+
   azureOpenAI: {
     endpoint: process.env.AZURE_OPENAI_ENDPOINT || '',
     apiKey: process.env.AZURE_OPENAI_API_KEY || '',
@@ -70,8 +95,14 @@ const config: Config = {
   },
 
   services: {
-    productServiceUrl: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8001',
-    orderServiceUrl: process.env.ORDER_SERVICE_URL || 'http://localhost:8006',
+    productService: {
+      appId: process.env.PRODUCT_SERVICE_APP_ID || 'product-service',
+      url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8001',
+    },
+    orderService: {
+      appId: process.env.ORDER_SERVICE_APP_ID || 'order-service',
+      url: process.env.ORDER_SERVICE_URL || 'http://localhost:8006',
+    },
   },
 };
 

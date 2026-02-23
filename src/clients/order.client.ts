@@ -1,9 +1,19 @@
 /**
  * Order Service Client
- * Handles communication with order-service via HTTP
+ * Handles communication with order-service via HTTP or Dapr
  */
+import { HttpMethod, DaprClient } from '@dapr/dapr';
 import config from '../core/config.js';
 import logger from '../core/logger.js';
+
+// Initialize Dapr client only if in Dapr mode
+let daprClient: DaprClient | null = null;
+if (config.serviceInvocation.mode === 'dapr') {
+  daprClient = new DaprClient({
+    daprHost: config.serviceInvocation.dapr?.host,
+    daprPort: config.serviceInvocation.dapr?.httpPort?.toString(),
+  });
+}
 
 export interface OrderItem {
   productId: string;
@@ -60,10 +70,12 @@ export interface OrdersResult {
 }
 
 /**
- * Order service client for HTTP invocation
+ * Order service client with dual-mode support (HTTP/Dapr)
  */
 class OrderClient {
-  private baseUrl = config.services.orderServiceUrl;
+  private mode = config.serviceInvocation.mode;
+  private appId = config.services.orderService.appId;
+  private baseUrl = config.services.orderService.url;
 
   /**
    * Get orders for a user
@@ -75,10 +87,9 @@ class OrderClient {
       log.debug('Getting user orders', { userId: params.userId, status: params.status });
 
       // Use the correct order-service endpoint: /api/orders/customer/{customerId}
-      const url = `${this.baseUrl}/api/orders/customer/${params.userId}`;
+      const endpoint = `api/orders/customer/${params.userId}`;
 
       const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
         'x-trace-id': traceId || '',
       };
 
@@ -87,16 +98,28 @@ class OrderClient {
         headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
       }
 
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
+      let orders: Order[];
 
-      if (!response.ok) {
-        throw new Error(`Get orders failed: ${response.status} ${response.statusText}`);
+      if (this.mode === 'dapr' && daprClient) {
+        orders = await daprClient.invoker.invoke(
+          this.appId,
+          endpoint,
+          HttpMethod.GET
+        ) as Order[];
+      } else {
+        const url = `${this.baseUrl}/${endpoint}`;
+        headers['Content-Type'] = 'application/json';
+        const response = await fetch(url, {
+          method: 'GET',
+          headers,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Get orders failed: ${response.status} ${response.statusText}`);
+        }
+
+        orders = (await response.json()) as Order[];
       }
-
-      const orders = await response.json() as Order[];
 
       log.debug('Orders retrieved', { count: orders?.length ?? 0 });
 
@@ -132,23 +155,32 @@ class OrderClient {
         headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
       }
 
-      const url = `${this.baseUrl}/api/orders/${orderId}`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
+      if (this.mode === 'dapr' && daprClient) {
+        const result = await daprClient.invoker.invoke(
+          this.appId,
+          `api/orders/${orderId}`,
+          HttpMethod.GET
+        ) as Order;
+        return result;
+      } else {
+        const url = `${this.baseUrl}/api/orders/${orderId}`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers,
+        });
 
-      if (response.status === 404) {
-        log.debug('Order not found', { orderId });
-        return null;
+        if (response.status === 404) {
+          log.debug('Order not found', { orderId });
+          return null;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Get order failed: ${response.status} ${response.statusText}`);
+        }
+
+        const result = (await response.json()) as Order;
+        return result;
       }
-
-      if (!response.ok) {
-        throw new Error(`Get order failed: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json() as Order;
-      return result;
     } catch (error: any) {
       if (error.message.includes('404')) {
         log.debug('Order not found', { orderId });
@@ -162,7 +194,12 @@ class OrderClient {
   /**
    * Get tracking information for an order
    */
-  async trackOrder(orderId: string, userId: string, authToken?: string, traceId?: string): Promise<OrderTrackingInfo | null> {
+  async trackOrder(
+    orderId: string,
+    userId: string,
+    authToken?: string,
+    traceId?: string,
+  ): Promise<OrderTrackingInfo | null> {
     const log = traceId ? logger.withTraceContext(traceId) : logger;
 
     try {
@@ -178,23 +215,32 @@ class OrderClient {
         headers['Authorization'] = authToken.startsWith('Bearer ') ? authToken : `Bearer ${authToken}`;
       }
 
-      const url = `${this.baseUrl}/api/orders/${orderId}/tracking`;
-      const response = await fetch(url, {
-        method: 'GET',
-        headers,
-      });
+      if (this.mode === 'dapr' && daprClient) {
+        const result = await daprClient.invoker.invoke(
+          this.appId,
+          `api/orders/${orderId}/tracking`,
+          HttpMethod.GET
+        ) as OrderTrackingInfo;
+        return result;
+      } else {
+        const url = `${this.baseUrl}/api/orders/${orderId}/tracking`;
+        const response = await fetch(url, {
+          method: 'GET',
+          headers,
+        });
 
-      if (response.status === 404) {
-        log.debug('Order tracking not found', { orderId });
-        return null;
+        if (response.status === 404) {
+          log.debug('Order tracking not found', { orderId });
+          return null;
+        }
+
+        if (!response.ok) {
+          throw new Error(`Get order tracking failed: ${response.status} ${response.statusText}`);
+        }
+
+        const result = (await response.json()) as OrderTrackingInfo;
+        return result;
       }
-
-      if (!response.ok) {
-        throw new Error(`Get order tracking failed: ${response.status} ${response.statusText}`);
-      }
-
-      const result = await response.json() as OrderTrackingInfo;
-      return result;
     } catch (error: any) {
       if (error.message.includes('404')) {
         log.debug('Order tracking not found', { orderId });

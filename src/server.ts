@@ -21,7 +21,7 @@ function validateConfig(): void {
   if (!config.azureOpenAI.endpoint) {
     missing.push('AZURE_OPENAI_ENDPOINT');
   }
-  
+
   // API key is only required if not using Managed Identity
   if (!config.azureOpenAI.useManagedIdentity && !config.azureOpenAI.apiKey) {
     missing.push('AZURE_OPENAI_API_KEY');
