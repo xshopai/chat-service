@@ -26,7 +26,7 @@ interface Config {
     filePath: string;
   };
   serviceInvocation: {
-    mode: 'http' | 'dapr';
+    mode: 'direct' | 'dapr';
     dapr?: {
       httpPort: number;
       grpcPort: number;
@@ -77,7 +77,7 @@ const config: Config = {
   },
 
   serviceInvocation: {
-    mode: (process.env.SERVICE_INVOCATION_MODE as 'http' | 'dapr') || 'http',
+    mode: (process.env.PLATFORM_MODE as 'direct' | 'dapr') || 'direct',
     dapr: {
       httpPort: parseInt(process.env.DAPR_HTTP_PORT || '3500', 10),
       grpcPort: parseInt(process.env.DAPR_GRPC_PORT || '50001', 10),
