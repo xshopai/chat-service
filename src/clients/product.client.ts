@@ -4,6 +4,7 @@
  */
 import { HttpMethod, DaprClient } from '@dapr/dapr';
 import config from '../core/config.js';
+import { resolve } from '../core/serviceResolver.js';
 import logger from '../core/logger.js';
 
 // Initialize Dapr client only if in Dapr mode
@@ -47,8 +48,8 @@ export interface ProductSearchResult {
  */
 class ProductClient {
   private mode = config.serviceInvocation.mode;
-  private appId = config.services.productService.appId;
-  private baseUrl = config.services.productService.url;
+  private appId = 'product-service';
+  private baseUrl = resolve('product-service');
 
   /**
    * Search products with optional filters

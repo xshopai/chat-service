@@ -4,6 +4,7 @@
  */
 import { HttpMethod, DaprClient } from '@dapr/dapr';
 import config from '../core/config.js';
+import { resolve } from '../core/serviceResolver.js';
 import logger from '../core/logger.js';
 
 // Initialize Dapr client only if in Dapr mode
@@ -74,8 +75,8 @@ export interface OrdersResult {
  */
 class OrderClient {
   private mode = config.serviceInvocation.mode;
-  private appId = config.services.orderService.appId;
-  private baseUrl = config.services.orderService.url;
+  private appId = 'order-service';
+  private baseUrl = resolve('order-service');
 
   /**
    * Get orders for a user
