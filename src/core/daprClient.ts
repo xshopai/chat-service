@@ -5,7 +5,7 @@
  * - Otherwise: Uses direct HTTP calls
  */
 import config from './config.js';
-import { resolve as resolveService } from './serviceResolver.js';
+import { resolveAsync } from './serviceResolver.js';
 
 interface InvokeMetadata {
   headers?: Record<string, string>;
@@ -53,7 +53,7 @@ class ServiceClient {
         console.log(`[ServiceClient] Calling ${httpMethod} ${url} (via Dapr)`);
       } else {
         // Direct HTTP call — resolved via serviceResolver
-        const baseUrl = resolveService(serviceName);
+        const baseUrl = await resolveAsync(serviceName);
         url = `${baseUrl}/${cleanMethodName}`;
         console.log(`[ServiceClient] Calling ${httpMethod} ${url} (direct HTTP)`);
       }
