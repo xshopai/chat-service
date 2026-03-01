@@ -8,6 +8,7 @@ dotenv.config();
 import app from './app.js';
 import config from './core/config.js';
 import logger from './core/logger.js';
+import { register as consulRegister, deregister as consulDeregister } from './core/consulRegistration.js';
 
 const PORT = config.service.port;
 const HOST = config.service.host;
@@ -42,8 +43,10 @@ function validateConfig(): void {
  * Graceful shutdown handler
  */
 function setupGracefulShutdown(server: any): void {
-  const shutdown = (signal: string) => {
+  const shutdown = async (signal: string) => {
     logger.info(`Received ${signal}, starting graceful shutdown...`);
+
+    await consulDeregister();
 
     server.close(() => {
       logger.info('HTTP server closed');
@@ -71,7 +74,7 @@ async function startServer(): Promise<void> {
 
     validateConfig();
 
-    const server = app.listen(PORT, HOST, () => {
+    const server = app.listen(PORT, HOST, async () => {
       // For display purposes, use localhost instead of 0.0.0.0
       const displayHost = HOST === '0.0.0.0' ? 'localhost' : HOST;
 
@@ -87,6 +90,8 @@ async function startServer(): Promise<void> {
         logger.debug(`API base URL: http://${displayHost}:${PORT}`);
         logger.debug(`Health check: http://${displayHost}:${PORT}/health/ready`);
       }
+
+      await consulRegister('chat-service', PORT, HOST);
     });
 
     setupGracefulShutdown(server);
