@@ -41,16 +41,6 @@ interface Config {
     apiVersion: string;
     useManagedIdentity: boolean;
   };
-  services: {
-    productService: {
-      appId: string;
-      url: string;
-    };
-    orderService: {
-      appId: string;
-      url: string;
-    };
-  };
 }
 
 const config: Config = {
@@ -92,17 +82,6 @@ const config: Config = {
     deploymentName: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4o',
     apiVersion: process.env.AZURE_OPENAI_API_VERSION || '2024-02-15-preview',
     useManagedIdentity: process.env.AZURE_USE_MANAGED_IDENTITY === 'true',
-  },
-
-  services: {
-    productService: {
-      appId: process.env.PRODUCT_SERVICE_APP_ID || 'product-service',
-      url: process.env.PRODUCT_SERVICE_URL || 'http://localhost:8001',
-    },
-    orderService: {
-      appId: process.env.ORDER_SERVICE_APP_ID || 'order-service',
-      url: process.env.ORDER_SERVICE_URL || 'http://localhost:8006',
-    },
   },
 };
 

@@ -5,6 +5,7 @@
  * - Otherwise: Uses direct HTTP calls
  */
 import config from './config.js';
+import { resolve as resolveService } from './serviceResolver.js';
 
 interface InvokeMetadata {
   headers?: Record<string, string>;
@@ -26,13 +27,7 @@ const DAPR_APP_IDS: Record<string, string> = {
   'inventory-service': process.env.DAPR_INVENTORY_SERVICE_APP_ID || 'inventory-service',
 };
 
-// Direct HTTP URLs for service discovery (used when MESSAGING_PROVIDER != dapr)
-const SERVICE_URLS: Record<string, string> = {
-  'product-service': process.env.PRODUCT_SERVICE_URL || 'http://xshopai-product-service:8001',
-  'order-service': process.env.ORDER_SERVICE_URL || 'http://xshopai-order-service:8006',
-  'user-service': process.env.USER_SERVICE_URL || 'http://xshopai-user-service:8002',
-  'inventory-service': process.env.INVENTORY_SERVICE_URL || 'http://xshopai-inventory-service:8005',
-};
+// Direct HTTP URLs resolved via serviceResolver (port registry local, SERVICE_BASE_URL on Azure)
 
 class ServiceClient {
   /**
@@ -57,8 +52,8 @@ class ServiceClient {
         url = `http://${DAPR_HOST}:${DAPR_HTTP_PORT}/v1.0/invoke/${appId}/method/${cleanMethodName}`;
         console.log(`[ServiceClient] Calling ${httpMethod} ${url} (via Dapr)`);
       } else {
-        // Direct HTTP call
-        const baseUrl = SERVICE_URLS[serviceName] || `http://xshopai-${serviceName}:8000`;
+        // Direct HTTP call — resolved via serviceResolver
+        const baseUrl = resolveService(serviceName);
         url = `${baseUrl}/${cleanMethodName}`;
         console.log(`[ServiceClient] Calling ${httpMethod} ${url} (direct HTTP)`);
       }
